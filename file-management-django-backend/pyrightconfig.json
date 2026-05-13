@@ -1,0 +1,9 @@
+{
+  "include": ["."],
+  "extraPaths": ["."],
+  "venvPath": ".",
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": false,
+  "reportMissingModuleSource": "none"
+}
