@@ -5,7 +5,7 @@ const TasksContext = createContext(null);
 export const TasksProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
 
-  const addTask = ({ title, description, assignedToEmail, assignedToName }) => {
+  const addTask = ({ title, description, assignedToEmail, assignedToName, adminFile }) => {
     const newTask = {
       id:
         typeof crypto !== 'undefined' && crypto.randomUUID
@@ -15,6 +15,7 @@ export const TasksProvider = ({ children }) => {
       description,
       assignedToEmail,
       assignedToName,
+      adminFile,
       status: 'pending', // 'pending' | 'in_progress' | 'done'
       createdAt: new Date().toISOString()
     };

@@ -18,6 +18,7 @@ class Task(models.Model):
     assigned_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_tasks')
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_file = models.FileField(upload_to='task_files/', null=True, blank=True)
     due_date = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     

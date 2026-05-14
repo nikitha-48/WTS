@@ -256,6 +256,19 @@ const TaskRow = ({ task, onStatusChange }) => {
               {task.description}
             </p>
           )}
+          {task.adminFile && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <DocumentTextIcon className="h-3.5 w-3.5 text-indigo-500" />
+              <a
+                href={typeof task.adminFile === 'string' ? task.adminFile : URL.createObjectURL(task.adminFile)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1"
+              >
+                Download Admin File
+              </a>
+            </div>
+          )}
           <p className="mt-1 text-[10px] text-slate-400">Assigned by admin</p>
         </div>
       </div>
