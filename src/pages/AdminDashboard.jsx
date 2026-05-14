@@ -75,9 +75,10 @@ const taskStatusConfig = {
   },
 };
 
-const StatCard = ({ icon: Icon, label, value, sub, gradient }) => (
+const StatCard = ({ icon: Icon, label, value, sub, gradient, onClick }) => (
   <div
-    className={`relative overflow-hidden rounded-2xl p-5 shadow-sm border border-white/20 ${gradient}`}
+    onClick={onClick}
+    className={`relative overflow-hidden rounded-2xl p-5 shadow-sm border border-white/20 ${gradient} ${onClick ? 'cursor-pointer hover:opacity-90 active:scale-95 transition-all' : ''}`}
   >
     <div className="flex items-start justify-between">
       <div>
@@ -410,6 +411,10 @@ const AdminDashboard = () => {
               value={stats.totalFiles}
               sub={`${stats.todayCount} added today`}
               gradient="bg-gradient-to-br from-indigo-600 to-indigo-800"
+              onClick={() => {
+                setActiveTab('all');
+                setStatusFilter('all');
+              }}
             />
             <StatCard
               icon={ClockIcon}
@@ -417,6 +422,7 @@ const AdminDashboard = () => {
               value={stats.pending}
               sub={`${stats.reviewing} under review`}
               gradient="bg-gradient-to-br from-amber-500 to-amber-700"
+              onClick={() => setActiveTab('pending')}
             />
             <StatCard
               icon={ShieldCheckIcon}
@@ -424,6 +430,10 @@ const AdminDashboard = () => {
               value={stats.approved}
               sub={`${stats.rejected} rejected`}
               gradient="bg-gradient-to-br from-emerald-600 to-emerald-800"
+              onClick={() => {
+                setActiveTab('all');
+                setStatusFilter('approved');
+              }}
             />
             <StatCard
               icon={UsersIcon}
@@ -431,6 +441,7 @@ const AdminDashboard = () => {
               value={stats.employeeCount}
               sub={formatBytes(stats.totalSize) + ' total'}
               gradient="bg-gradient-to-br from-violet-600 to-violet-800"
+              onClick={() => setActiveTab('employees')}
             />
           </div>
         </div>
