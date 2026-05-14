@@ -145,6 +145,7 @@ const AdminDashboard = () => {
 
   /* employee directory state */
   const [employees, setEmployees] = useState([]);
+  const [adminError, setAdminError] = useState('');
   const refreshEmployees = useCallback(() => {
     setEmployees(getAllEmployees ? getAllEmployees() : []);
   }, [getAllEmployees]);
@@ -155,7 +156,12 @@ const AdminDashboard = () => {
   const inactiveEmployees = employees.filter((e) => e.isApproved && !e.isActive);
 
   const handleApprove = (id) => {
-    approveEmployee(id);
+    const approved = approveEmployee(id);
+    if (!approved) {
+      setAdminError('Cannot approve accounts with non-company email addresses.');
+    } else {
+      setAdminError('');
+    }
     refreshEmployees();
   };
   const handleDeactivate = (id) => {
@@ -831,6 +837,12 @@ const AdminDashboard = () => {
                 {pendingEmployees.length} pending
               </span>
             </div>
+
+            {adminError && (
+              <div className="mx-6 mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {adminError}
+              </div>
+            )}
 
             <div className="px-6 py-5">
               {pendingEmployees.length === 0 ? (
