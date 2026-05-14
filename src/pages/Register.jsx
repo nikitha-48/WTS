@@ -23,6 +23,12 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!form.email.endsWith('@sskatt.com')) {
+      setError('Only company emails (@sskatt.com) are allowed.');
+      return;
+    }
+
     try {
       setLoading(true);
       await register({
@@ -73,10 +79,16 @@ const Register = () => {
             type="email"
             name="email"
             required
+            placeholder="yourname@sskatt.com"
+            pattern=".+@sskatt\.com"
+            title="Please use your company email address ending in @sskatt.com"
             value={form.email}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
+          <p className="mt-2 text-xs text-gray-500">
+            Register with your company email address, for example <strong>chandu@sskatt.com</strong>.
+          </p>
         </div>
 
         <div>

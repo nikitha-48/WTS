@@ -33,9 +33,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def validate_email(self, value):
-        if CustomUser.objects.filter(email=value).exists():
+        normalized_email = value.strip().lower()
+        if CustomUser.objects.filter(email=normalized_email).exists():
             raise serializers.ValidationError("Email already exists.")
-        return value
+        if not normalized_email.endswith('@sskatt.com'):
+            raise serializers.ValidationError("Only company emails (@sskatt.com) are allowed.")
+        return normalized_email
 
     def validate(self, data):
         password2 = data.pop('password2', None)
@@ -77,9 +80,12 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def validate_email(self, value):
-        if CustomUser.objects.filter(email=value).exists():
+        normalized_email = value.strip().lower()
+        if CustomUser.objects.filter(email=normalized_email).exists():
             raise serializers.ValidationError("Email already exists.")
-        return value
+        if not normalized_email.endswith('@sskatt.com'):
+            raise serializers.ValidationError("Only company emails (@sskatt.com) are allowed.")
+        return normalized_email
 
     def validate(self, data):
         password2 = data.pop('password2', None)

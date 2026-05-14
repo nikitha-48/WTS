@@ -133,21 +133,26 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: 'All fields are required' };
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail.endsWith('@sskatt.com')) {
+      return { success: false, error: 'Only company emails (@sskatt.com) are allowed.' };
+    }
+
     // Duplicate check against demo users
-    if (DEMO_USERS.some((u) => u.email === email)) {
+    if (DEMO_USERS.some((u) => u.email === normalizedEmail)) {
       return { success: false, error: 'Email already in use' };
     }
 
     // Duplicate check against registered users
     const registered = loadRegisteredUsers();
-    if (registered.some((u) => u.email === email)) {
+    if (registered.some((u) => u.email === normalizedEmail)) {
       return { success: false, error: 'Email already in use' };
     }
 
     // Create pending employee — NOT approved yet
     const newUser = {
       id: `emp-${Date.now()}`,
-      email,
+      email: normalizedEmail,
       password,
       name,
       role: 'employee',
@@ -193,6 +198,12 @@ export const AuthProvider = ({ children }) => {
     const registered = loadRegisteredUsers();
     const idx = registered.findIndex((u) => u.id === userId);
     if (idx === -1) return false;
+
+    const userEmail = registered[idx].email?.trim().toLowerCase();
+    if (!userEmail?.endsWith('@sskatt.com')) {
+      return false;
+    }
+
     registered[idx].isApproved = true;
     registered[idx].isActive = true;
     saveRegisteredUsers(registered);

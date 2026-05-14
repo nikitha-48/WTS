@@ -66,6 +66,12 @@ const Signup = () => {
       return;
     }
 
+    if (!formData.email.endsWith('@sskatt.com')) {
+      setError('Only company emails (@sskatt.com) are allowed.');
+      setLoading(false);
+      return;
+    }
+
     const result = signup({
       email: formData.email,
       password: formData.password,
@@ -171,14 +177,7 @@ const Signup = () => {
         {/* Card */}
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
 
-          {/* Approval notice */}
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <ClockIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-            <p className="text-xs text-amber-700 leading-relaxed">
-              After registering your account will be <strong>pending review</strong>.
-              An admin must approve it before you can log in.
-            </p>
-          </div>
+        
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
@@ -219,11 +218,14 @@ const Signup = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@company.com"
+                  placeholder="yourname@sskatt.com"
+                  pattern=".+@sskatt\.com"
+                  title="Please use your company email address ending in @sskatt.com"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all"
                   required
                 />
               </div>
+             
             </div>
 
             {/* Department */}
