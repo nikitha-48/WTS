@@ -83,9 +83,8 @@ const Signup = () => {
   };
 
   const departments = [
-    'Engineering', 'Marketing', 'Sales', 'Human Resources',
-    'Finance', 'Operations', 'Customer Support', 'Product',
-    'Design', 'Legal', 'Other',
+    'HR','Python Developer', 'Research', 'Cybersecurity', 'Devops',
+    'Testing', 'Data Analyst',
   ];
 
   // ── Pending-approval success screen ────────────────────────────────────────
