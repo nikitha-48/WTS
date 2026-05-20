@@ -1,5 +1,5 @@
 // src/components/FileList.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   DocumentTextIcon,
   EyeIcon,
@@ -98,6 +98,33 @@ const FileList = ({
   onStatusChange,
   onReview,
 }) => {
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (!showToast) return;
+    const timer = setTimeout(() => setShowToast(false), 3000);
+    return () => clearTimeout(timer);
+  }, [showToast]);
+
+  const handleDownload = (file) => {
+    if (!file?.url) {
+      setToastMessage('Download failed: file unavailable');
+      setShowToast(true);
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.originalName || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setToastMessage('Successfully downloaded');
+    setShowToast(true);
+  };
+
   if (!files || files.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 text-center">
@@ -328,16 +355,7 @@ const FileList = ({
 
                     {/* Download Button - Icon Only */}
                     <button
-                      onClick={() => {
-                        if (file.url) {
-                          const link = document.createElement('a');
-                          link.href = file.url;
-                          link.download = file.originalName;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }
-                      }}
+                      onClick={() => handleDownload(file)}
                       className="flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600 transition-all active:scale-95"
                       title="Download file"
                     >
@@ -369,6 +387,11 @@ const FileList = ({
           })}
         </tbody>
       </table>
+      {showToast && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white shadow-xl ring-1 ring-black/10">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 };
