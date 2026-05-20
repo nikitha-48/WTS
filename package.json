@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "homepage": "https://hemachandra5.github.io/FTS",
   "scripts": {
     "dev": "vite --port 5173",
     "build": "vite build",
