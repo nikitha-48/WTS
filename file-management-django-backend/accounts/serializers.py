@@ -1,61 +1,89 @@
+import uuid
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from accounts.models import CustomUser
 
 
+# ── Helpers ──────────────────────────────────────────────────────────────
+def _split_name(name: str):
+    name = (name or '').strip()
+    if not name:
+        return '', ''
+    parts = name.split(maxsplit=1)
+    if len(parts) == 1:
+        return parts[0], ''
+    return parts[0], parts[1]
+
+
+def _username_from_email(email: str) -> str:
+    base = (email or '').split('@', 1)[0].strip().lower() or 'user'
+    candidate = base
+    while CustomUser.objects.filter(username=candidate).exists():
+        candidate = f"{base}-{uuid.uuid4().hex[:6]}"
+    return candidate
+
+
+# ── Serializers ──────────────────────────────────────────────────────────
 class UserSerializer(serializers.ModelSerializer):
+    """Public user shape consumed by the frontend dashboards."""
+
+    name = serializers.SerializerMethodField()
+    isApproved = serializers.BooleanField(source='is_approved', read_only=True)
+    isActive = serializers.BooleanField(source='is_active', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
     class Meta:
         model = CustomUser
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
+            'id', 'username', 'email',
+            'first_name', 'last_name', 'name',
             'role', 'department', 'profile_picture',
-            'is_active', 'is_approved',
-            'created_at', 'updated_at',
+            'isActive', 'isApproved',
+            'createdAt',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'username', 'createdAt']
+
+    def get_name(self, obj):
+        full = f"{obj.first_name or ''} {obj.last_name or ''}".strip()
+        return full or obj.username
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    """Accepts a single 'name' field plus an email/password from the UI."""
+
+    name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     password = serializers.CharField(
         write_only=True,
         min_length=6,
-        validators=[validate_password]
+        validators=[validate_password],
     )
-    password2 = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password2', 'department']
-
-    def validate_username(self, value):
-        if CustomUser.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
-        return value
+        fields = ['email', 'name', 'password', 'department']
 
     def validate_email(self, value):
-        normalized_email = value.strip().lower()
-        if CustomUser.objects.filter(email=normalized_email).exists():
+        normalized_email = (value or '').strip().lower()
+        if CustomUser.objects.filter(email__iexact=normalized_email).exists():
             raise serializers.ValidationError("Email already exists.")
         if not normalized_email.endswith('@sskatt.com'):
             raise serializers.ValidationError("Only company emails (@sskatt.com) are allowed.")
         return normalized_email
 
-    def validate(self, data):
-        password2 = data.pop('password2', None)
-        if data['password'] != password2:
-            raise serializers.ValidationError({'password': 'Passwords do not match'})
-        return data
-
     def create(self, validated_data):
-        # New employees start inactive and unapproved — admin must approve them
+        name = validated_data.pop('name', '')
+        first, last = _split_name(name)
+        email = validated_data['email']
+
+        # Employees start inactive and unapproved — admin must approve them.
         user = CustomUser.objects.create_user(  # type: ignore[call-arg]
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
+            username=_username_from_email(email),
+            email=email,
+            first_name=first,
+            last_name=last,
             password=validated_data['password'],
             role='employee',
-            department=validated_data.get('department', 'General'),
+            department=validated_data.get('department', 'General') or 'General',
             is_active=False,
             is_approved=False,
         )
@@ -63,46 +91,38 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     password = serializers.CharField(
         write_only=True,
         min_length=6,
-        validators=[validate_password]
+        validators=[validate_password],
     )
-    password2 = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password2', 'department']
-
-    def validate_username(self, value):
-        if CustomUser.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
-        return value
+        fields = ['email', 'name', 'password', 'department']
 
     def validate_email(self, value):
-        normalized_email = value.strip().lower()
-        if CustomUser.objects.filter(email=normalized_email).exists():
+        normalized_email = (value or '').strip().lower()
+        if CustomUser.objects.filter(email__iexact=normalized_email).exists():
             raise serializers.ValidationError("Email already exists.")
         if not normalized_email.endswith('@sskatt.com'):
             raise serializers.ValidationError("Only company emails (@sskatt.com) are allowed.")
         return normalized_email
 
-    def validate(self, data):
-        password2 = data.pop('password2', None)
-        if data['password'] != password2:
-            raise serializers.ValidationError({'password': 'Passwords do not match'})
-        return data
-
     def create(self, validated_data):
-        # Admins are immediately active and approved
+        name = validated_data.pop('name', '')
+        first, last = _split_name(name)
+        email = validated_data['email']
+
         user = CustomUser.objects.create_user(  # type: ignore[call-arg]
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
+            username=_username_from_email(email),
+            email=email,
+            first_name=first,
+            last_name=last,
             password=validated_data['password'],
             role='admin',
-            department=validated_data.get('department', 'General'),
+            department=validated_data.get('department', 'General') or 'General',
             is_staff=True,
             is_superuser=True,
             is_active=True,

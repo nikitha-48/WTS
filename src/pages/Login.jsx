@@ -45,7 +45,7 @@ const Login = () => {
     }
 
     // Attempt login
-    const result = login(formData.email, formData.password);
+    const result = await login(formData.email, formData.password);
 
     setLoading(false);
 

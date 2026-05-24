@@ -19,9 +19,6 @@ class FileConsumer(AsyncWebsocketConsumer):
         print("❌ Client disconnected from files WebSocket")
 
     async def receive(self, text_data=None, bytes_data=None):
-        """
-        Client -> Server messages (optional)
-        """
         if not text_data:
             return
 
@@ -33,20 +30,16 @@ class FileConsumer(AsyncWebsocketConsumer):
                 files = await self.get_all_files()
                 await self.send(
                     text_data=json.dumps(
-                        {
-                            "type": "file_list",
-                            "files": files,
-                        }
+                        {"type": "file_list", "files": files}
                     )
                 )
                 return
 
             if action == "file_uploaded":
-                # Optional: client-triggered broadcast (usually you broadcast from views.py)
                 await self.channel_layer.group_send(
                     self.GROUP_NAME,
                     {
-                        "type": "file_notification",  # calls self.file_notification
+                        "type": "file_notification",
                         "message": f"New file uploaded: {data.get('fileName')}",
                         "file": data,
                     },
@@ -62,24 +55,7 @@ class FileConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             await self.send(text_data=json.dumps({"type": "error", "message": str(e)}))
 
-    # ------------------------------------------------------------------
-    # ✅ Recommended generic event handler (works with views.py helper):
-    # group_send(..., {"type": "files.event", "payload": {...}})
-    # Channels maps "files.event" -> files_event method
-    # ------------------------------------------------------------------
-    async def files_event(self, event):
-        """
-        Server -> Client generic event.
-        Expects: event["payload"] to be JSON-serializable.
-        """
-        payload = event.get("payload", {})
-        await self.send(text_data=json.dumps(payload))
-
-    # ------------------------------------------------------------------
-    # Backward-compatible handlers (your current style)
-    # ------------------------------------------------------------------
     async def file_notification(self, event):
-        """Broadcast file notification to all connected clients"""
         await self.send(
             text_data=json.dumps(
                 {
@@ -91,7 +67,6 @@ class FileConsumer(AsyncWebsocketConsumer):
         )
 
     async def file_status_update(self, event):
-        """Broadcast file status update"""
         await self.send(
             text_data=json.dumps(
                 {
@@ -103,33 +78,37 @@ class FileConsumer(AsyncWebsocketConsumer):
             )
         )
 
-    # ------------------------------------------------------------------
-    # DB helpers
-    # ------------------------------------------------------------------
     @sync_to_async
     def get_all_files(self):
-        """
-        Returns files in the shape your frontend expects:
-        id, originalName, size, status, userName, userEmail, createdAt, description
-        """
         qs = (
             File.objects.select_related("user")
             .all()
-            .order_by("-createdAt")
+            .order_by("-created_at")
         )
 
         result = []
         for f in qs:
+            user = getattr(f, "user", None)
+            full_name = ""
+            if user is not None:
+                full_name = (
+                    f"{user.first_name or ''} {user.last_name or ''}".strip()
+                    or user.username
+                )
             result.append(
                 {
                     "id": str(f.id),
-                    "originalName": getattr(f, "originalName", None),
-                    "size": getattr(f, "size", None),
-                    "status": getattr(f, "status", None),
-                    "userName": getattr(f.user, "first_name", "") if getattr(f, "user", None) else "",
-                    "userEmail": getattr(f.user, "email", "") if getattr(f, "user", None) else "",
-                    "createdAt": f.createdAt.isoformat() if getattr(f, "createdAt", None) else None,
-                    "description": getattr(f, "description", ""),
+                    "originalName": f.original_name,
+                    "size": f.size,
+                    "mimeType": f.mime_type,
+                    "url": f.url,
+                    "status": f.status,
+                    "userName": full_name,
+                    "userEmail": getattr(user, "email", "") if user is not None else "",
+                    "userId": getattr(user, "id", None) if user is not None else None,
+                    "createdAt": f.created_at.isoformat() if f.created_at else None,
+                    "description": f.description or "",
+                    "adminNote": f.admin_note or "",
                 }
             )
         return result

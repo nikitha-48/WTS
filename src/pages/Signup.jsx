@@ -72,7 +72,7 @@ const Signup = () => {
       return;
     }
 
-    const result = signup({
+    const result = await signup({
       email: formData.email,
       password: formData.password,
       name: formData.name,
